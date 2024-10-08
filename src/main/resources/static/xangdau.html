@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Quản Lý Xăng Dầu</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <style>
+        #xangdauTable {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container mt-4">
+    <h2>Quản Lý Xăng Dầu</h2>
+    <button class="btn btn-primary mb-3" onclick="showAddModal()">Thêm Xăng Dầu</button>
+    <table class="table table-bordered" id="xangdauTable">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Tên Xăng Dầu</th>
+            <th>Giá</th>
+            <th>Loại Nhiên Liệu</th>
+            <th>Hành Động</th>
+        </tr>
+        </thead>
+        <tbody id="xangdauTableBody">
+        <!-- Dữ liệu sẽ được điền vào đây -->
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal thêm/sửa xăng dầu -->
+<div class="modal fade" id="xangDauModal" tabindex="-1" aria-labelledby="xangDauModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="xangDauForm">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="xangDauModalLabel">Thêm/Sửa Xăng Dầu</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="maXangDau" name="maXangDau">
+                    <div class="mb-3">
+                        <label for="tenXangDau" class="form-label">Tên Xăng Dầu</label>
+                        <input type="text" class="form-control" id="tenXangDau" name="tenXangDau" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="gia" class="form-label">Giá</label>
+                        <input type="number" class="form-control" id="gia" name="gia" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="loaiNhienLieu" class="form-label">Loại Nhiên Liệu</label>
+                        <input type="text" class="form-control" id="loaiNhienLieu" name="loaiNhienLieu" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-primary">Lưu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Custom JS -->
+<script>
+    // Load danh sách xăng dầu
+    function loadXangDau() {
+        fetch('/api/xangdau')
+            .then(response => response.json())
+            .then(data => {
+                const tableBody = document.getElementById('xangdauTableBody');
+                tableBody.innerHTML = '';
+                data.forEach(xang => {
+                    let row = `
+                        <tr>
+                            <td>${xang.maXangDau}</td>
+                            <td>${xang.tenXangDau}</td>
+                            <td>${xang.gia}</td>
+                            <td>${xang.loaiNhienLieu}</td>
+                            <td>
+                                <button class="btn btn-warning btn-sm" onclick="showEditModal(${xang.maXangDau})">Sửa</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteXangDau(${xang.maXangDau})">Xóa</button>
+                            </td>
+                        </tr>
+                    `;
+                    tableBody.innerHTML += row;
+                });
+            });
+    }
+
+    // Hiển thị modal thêm mới xăng dầu
+    function showAddModal() {
+        document.getElementById('xangDauModalLabel').innerText = 'Thêm Xăng Dầu Mới';
+        document.getElementById('maXangDau').value = '';
+        document.getElementById('tenXangDau').value = '';
+        document.getElementById('gia').value = '';
+        document.getElementById('loaiNhienLieu').value = '';
+        new bootstrap.Modal(document.getElementById('xangDauModal')).show();
+    }
+
+    // Hiển thị modal sửa xăng dầu
+    function showEditModal(maXangDau) {
+        fetch(`/api/xangdau/${maXangDau}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('xangDauModalLabel').innerText = 'Chỉnh Sửa Xăng Dầu';
+                document.getElementById('maXangDau').value = data.maXangDau;
+                document.getElementById('tenXangDau').value = data.tenXangDau;
+                document.getElementById('gia').value = data.gia;
+                document.getElementById('loaiNhienLieu').value = data.loaiNhienLieu;
+                new bootstrap.Modal(document.getElementById('xangDauModal')).show();
+            });
+    }
+
+    // Xử lý form thêm/sửa xăng dầu
+    document.getElementById('xangDauForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        let formData = new FormData(this);
+        let maXangDau = formData.get('maXangDau');
+        let method = maXangDau ? 'PUT' : 'POST';
+        let url = maXangDau ? `/api/xangdau/${maXangDau}` : '/api/xangdau';
+
+        fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                maXangDau: formData.get('maXangDau'),
+                tenXangDau: formData.get('tenXangDau'),
+                gia: formData.get('gia'),
+                loaiNhienLieu: formData.get('loaiNhienLieu')
+            })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Có lỗi xảy ra!');
+                }
+                alert('Thêm/Sửa xăng dầu thành công!');
+                loadXangDau();
+                bootstrap.Modal.getInstance(document.getElementById('xangDauModal')).hide();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra! Vui lòng kiểm tra lại.');
+            });
+    });
+
+    // Xóa xăng dầu
+    function deleteXangDau(maXangDau) {
+        if (confirm('Bạn có chắc chắn muốn xóa xăng dầu này?')) {
+            fetch(`/api/xangdau/${maXangDau}`, {
+                method: 'DELETE'
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Có lỗi xảy ra khi xóa!');
+                    }
+                    alert('Xóa xăng dầu thành công!');
+                    loadXangDau();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Có lỗi xảy ra! Vui lòng kiểm tra lại.');
+                });
+        }
+    }
+
+    // Load dữ liệu xăng dầu khi tải trang
+    document.addEventListener('DOMContentLoaded', loadXangDau);
+</script>
+</body>
+
+</html>

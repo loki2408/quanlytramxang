@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Quản Lý Kho</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <style>
+        #warehouseTable {
+            width: 100%;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container mt-4">
+    <h2>Quản Lý Kho</h2>
+    <button class="btn btn-primary" onclick="showAddWarehouseModal()">Thêm Kho</button>
+    <table class="table table-striped" id="warehouseTable">
+        <thead>
+        <tr>
+            <th>Tên Kho</th>
+            <th>Số Lượng Tồn</th>
+            <th>Mã Trạm</th>
+            <th>Hành Động</th>
+        </tr>
+        </thead>
+        <tbody id="warehouseTableBody">
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal thêm/sửa kho -->
+<div class="modal fade" id="warehouseModal" tabindex="-1" aria-labelledby="warehouseModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="warehouseForm">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="warehouseModalLabel">Thêm/Sửa Kho</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="maKho" name="maKho">
+                    <div class="mb-3">
+                        <label for="tenKho" class="form-label">Tên Kho</label>
+                        <input type="text" class="form-control" id="tenKho" name="tenKho" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="soLuongTon" class="form-label">Số Lượng Tồn</label>
+                        <input type="number" class="form-control" id="soLuongTon" name="soLuongTon" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="maTram" class="form-label">Mã Trạm</label>
+                        <input type="number" class="form-control" id="maTram" name="maTram" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-primary">Lưu</button>
+                    <button type="button" class="btn btn-danger" id="btnDeleteWarehouse">Xóa</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Custom JS -->
+<script>
+    let warehouses = [];
+
+    // Load kho từ CSDL
+    function loadWarehouses() {
+        fetch('/api/kho')
+            .then(response => response.json())
+            .then(data => {
+                warehouses = data;
+                renderWarehouseTable();
+            });
+    }
+
+    function renderWarehouseTable() {
+        const tableBody = document.getElementById('warehouseTableBody');
+        tableBody.innerHTML = '';
+
+        warehouses.forEach(kho => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${kho.tenKho}</td>
+                <td>${kho.soLuongTon}</td>
+                <td>${kho.maTram}</td>
+                <td>
+                    <button class="btn btn-warning" onclick="showEditWarehouseModal(${kho.maKho})">Sửa</button>
+                    <button class="btn btn-danger" onclick="deleteWarehouse(${kho.maKho})">Xóa</button>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+
+    function showAddWarehouseModal() {
+        document.getElementById('warehouseModalLabel').innerText = 'Thêm Kho Mới';
+        document.getElementById('maKho').value = '';
+        document.getElementById('tenKho').value = '';
+        document.getElementById('soLuongTon').value = '';
+        document.getElementById('maTram').value = '';
+        new bootstrap.Modal(document.getElementById('warehouseModal')).show();
+    }
+
+    function showEditWarehouseModal(maKho) {
+        const kho = warehouses.find(kho => kho.maKho === maKho);
+        if (!kho) return;
+
+        document.getElementById('warehouseModalLabel').innerText = 'Chỉnh Sửa Kho';
+        document.getElementById('maKho').value = kho.maKho;
+        document.getElementById('tenKho').value = kho.tenKho;
+        document.getElementById('soLuongTon').value = kho.soLuongTon;
+        document.getElementById('maTram').value = kho.maTram;
+        new bootstrap.Modal(document.getElementById('warehouseModal')).show();
+    }
+
+    // Xử lý form submit
+    document.getElementById('warehouseForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        let formData = new FormData(this);
+        let maKho = formData.get('maKho');
+        let method = maKho ? 'PUT' : 'POST';
+        let url = maKho ? `/api/kho/${maKho}` : '/api/kho';
+
+        fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                tenKho: formData.get('tenKho'),
+                soLuongTon: formData.get('soLuongTon'),
+                maTram: formData.get('maTram')
+            })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Có lỗi xảy ra!');
+                }
+                alert('Thêm/Sửa kho thành công!');
+                location.reload();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra! Vui lòng kiểm tra lại.');
+            });
+    });
+
+    // Xử lý nút xóa
+    function deleteWarehouse(maKho) {
+        if (confirm('Bạn có chắc chắn muốn xóa kho này?')) {
+            fetch(`/api/kho/${maKho}`, {
+                method: 'DELETE'
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Có lỗi xảy ra khi xóa!');
+                    }
+                    alert('Xóa kho thành công!');
+                    location.reload();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Có lỗi xảy ra! Vui lòng kiểm tra lại.');
+                });
+        }
+    }
+
+    // Tải danh sách kho khi trang được tải
+    window.onload = loadWarehouses;
+</script>
+</body>
+
+</html>

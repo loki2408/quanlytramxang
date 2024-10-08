@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Quản Lý Tài Khoản</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Custom CSS -->
+  <style>
+    #main {
+      padding: 20px;
+    }
+  </style>
+</head>
+
+<body>
+<div id="main" class="container mt-4">
+  <h2>Quản Lý Tài Khoản</h2>
+
+  <!-- Tạo Tài Khoản Form -->
+  <div class="card mb-4">
+    <div class="card-header">Tạo Tài Khoản</div>
+    <div class="card-body">
+      <form id="taiKhoanForm">
+        <div class="row mb-3">
+          <div class="col-md-4">
+            <label for="username" class="form-label">Tên Người Dùng</label>
+            <input type="text" class="form-control" id="username" name="username" required>
+          </div>
+          <div class="col-md-4">
+            <label for="password" class="form-label">Mật Khẩu</label>
+            <input type="password" class="form-control" id="password" name="password" required>
+          </div>
+          <div class="col-md-4">
+            <label for="role" class="form-label">Vai Trò</label>
+            <select class="form-select" id="role" name="role" required>
+              <option value="">Chọn Vai Trò</option>
+              <option value="ADMIN">Admin</option>
+              <option value="TRUONG_TRAM">Trưởng Trạm</option>
+              <option value="NHAN_VIEN">Nhân Viên</option>
+            </select>
+          </div>
+        </div>
+        <button type="button" class="btn btn-primary" onclick="createTaiKhoan()">Tạo Tài Khoản</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Danh Sách Tài Khoản -->
+  <div class="card">
+    <div class="card-header">Danh Sách Tài Khoản</div>
+    <div class="card-body">
+      <table class="table table-bordered" id="taiKhoanTable">
+        <thead>
+        <tr>
+          <th>ID</th>
+          <th>Tên Người Dùng</th>
+          <th>Vai Trò</th>
+          <th>Thao Tác</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Đổi Mật Khẩu -->
+<div class="modal fade" id="doiMatKhauModal" tabindex="-1" aria-labelledby="doiMatKhauModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="doiMatKhauModalLabel">Đổi Mật Khẩu</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="doiMatKhauForm">
+          <input type="hidden" id="taiKhoanIdModal" name="taiKhoanId">
+          <div class="mb-3">
+            <label for="newPassword" class="form-label">Mật Khẩu Mới</label>
+            <input type="password" class="form-control" id="newPassword" name="newPassword" required>
+          </div>
+          <button type="button" class="btn btn-primary" onclick="updateMatKhau()">Đổi Mật Khẩu</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Custom JS -->
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    loadTaiKhoanList();
+  });
+
+  function loadTaiKhoanList() {
+    fetch('/api/taikhoan')
+            .then(response => response.json())
+            .then(data => {
+              const tableBody = document.querySelector('#taiKhoanTable tbody');
+              tableBody.innerHTML = '';
+              data.forEach(taiKhoan => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                        <td>${taiKhoan.id}</td>
+                        <td>${taiKhoan.username}</td>
+                        <td>${taiKhoan.role}</td>
+                        <td>
+                            <button class="btn btn-primary btn-sm" onclick="editTaiKhoan(${taiKhoan.id})">Sửa</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteTaiKhoan(${taiKhoan.id})">Xóa</button>
+                        </td>
+                    `;
+                tableBody.appendChild(row);
+              });
+            })
+            .catch(error => console.error('Error:', error));
+  }
+
+  function createTaiKhoan() {
+    const taiKhoanDTO = {
+      username: document.getElementById("username").value,
+      password: document.getElementById("password").value,
+      role: document.getElementById("role").value
+    };
+
+    fetch('/api/taikhoan', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(taiKhoanDTO)
+    })
+            .then(response => {
+              if (!response.ok) {
+                throw new Error('Error while creating tai khoan');
+              }
+              return response.json();
+            })
+            .then(data => {
+              alert('Tạo tài khoản thành công!');
+              loadTaiKhoanList();
+            })
+            .catch(error => {
+              console.error('Error:', error);
+              alert('Có lỗi xảy ra! Vui lòng thử lại.');
+            });
+  }
+
+  function deleteTaiKhoan(id) {
+    if (confirm('Bạn có chắc chắn muốn xóa tài khoản này?')) {
+      fetch(`/api/taikhoan/${id}`, {
+        method: 'DELETE'
+      })
+              .then(response => {
+                if (!response.ok) {
+                  throw new Error('Error while deleting tai khoan');
+                }
+                alert('Xóa tài khoản thành công!');
+                loadTaiKhoanList();
+              })
+              .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra! Vui lòng thử lại.');
+              });
+    }
+  }
+
+  function editTaiKhoan(id) {
+    document.getElementById('taiKhoanIdModal').value = id;
+    new bootstrap.Modal(document.getElementById('doiMatKhauModal')).show();
+  }
+
+  function updateMatKhau() {
+    const id = document.getElementById('taiKhoanIdModal').value;
+    const newPassword = document.getElementById('newPassword').value;
+
+    if (!newPassword) {
+      alert('Vui lòng nhập mật khẩu mới.');
+      return;
+    }
+
+    fetch(`/api/taikhoan/doimatkhau/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ password: newPassword })
+    })
+            .then(response => {
+              if (!response.ok) {
+                throw new Error('Error while updating password');
+              }
+              alert('Đổi mật khẩu thành công!');
+              const modal = bootstrap.Modal.getInstance(document.getElementById('doiMatKhauModal'));
+              modal.hide();
+              loadTaiKhoanList();
+            })
+            .catch(error => {
+              console.error('Error:', error);
+              alert('Có lỗi xảy ra! Vui lòng thử lại.');
+            });
+  }
+</script>
+
+</body>
+
+</html>

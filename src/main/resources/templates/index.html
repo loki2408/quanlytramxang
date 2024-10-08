@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Quản Lý Trạm Xăng</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css">
+
+    <!-- Custom CSS -->
+    <style>
+        #map {
+            height: 800px;
+            width: 1500px;
+        }
+        #sidebar {
+            width: 250px;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background-color: #f8f9fa;
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        #search-bar {
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container mt-4">
+    <h2>Quản Lý Trạm Xăng</h2>
+    <div id="map"></div>
+</div>
+<div id="sidebar">
+    <h4>Chức Năng Quản Lý</h4>
+    <ul class="nav flex-column">
+        <li class="nav-item">
+            <a class="nav-link" href="/index">Quản Lý Trạm Xăng</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="/kho.html">Quản Lý Kho</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="/xangdau.html">Quản Lý Xăng Dầu</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="#">Quản Lý Doanh Thu</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="#">Quản Lý Nhân Viên</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="#">Quản Lý Hóa Đơn</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="/phieunhap.html">Quản Lý Phiếu Nhập</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="/taikhoan.html">Quản Lý Tài Khoản</a>
+        </li>
+        <li class="nav-item">
+            <a href="/logout" class="btn btn-danger">Đăng Xuất</a>
+        </li>
+    </ul>
+    <hr>
+    <h5>Tìm Kiếm Trạm Xăng</h5>
+    <div id="search-bar">
+        <input type="text" id="searchInput" class="form-control" placeholder="Nhập tên trạm hoặc địa chỉ...">
+        <button class="btn btn-primary mt-2" onclick="searchStation()">Tìm Kiếm</button>
+    </div>
+</div>
+
+<!-- Modal thêm/sửa trạm xăng -->
+<div class="modal fade" id="tramXangModal" tabindex="-1" aria-labelledby="tramXangModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="tramXangForm">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="tramXangModalLabel">Thêm/Sửa Trạm Xăng</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="maTram" name="maTram">
+                    <div class="mb-3">
+                        <label for="tenTram" class="form-label">Tên Trạm</label>
+                        <input type="text" class="form-control" id="tenTram" name="tenTram" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="diaChi" class="form-label">Địa Chỉ</label>
+                        <input type="text" class="form-control" id="diaChi" name="diaChi" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="truongTram" class="form-label">Tên Trưởng Trạm</label>
+                        <input type="text" class="form-control" id="truongTram" name="truongTram" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="kinhDo" class="form-label">Kinh Độ</label>
+                        <input type="text" class="form-control" id="kinhDo" name="kinhDo" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="viDo" class="form-label">Vĩ Độ</label>
+                        <input type="text" class="form-control" id="viDo" name="viDo" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="hinhAnh" class="form-label">Hình Ảnh</label>
+                        <input type="file" class="form-control" id="hinhAnh" name="hinhAnh">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-primary">Lưu</button>
+                    <button type="button" class="btn btn-danger" id="btnDelete">Xóa</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+<!-- Custom JS -->
+<script>
+    let markers = [];
+    let map = L.map('map').setView([9.9125186, 105.1474038], 13); // Vị trí mặc định
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+    }).addTo(map);
+
+    let currentMarker = null;
+
+    // Load trạm xăng từ CSDL
+    fetch('/api/tramxang')
+        .then(response => response.json())
+        .then(data => {
+            data.forEach(tram => {
+                let imageUrl = tram.tenHinhAnh ? `/images/${tram.tenHinhAnh}` : '/images/default.jpg';
+                let marker = L.marker([tram.viDo, tram.kinhDo], { data: tram }).addTo(map)
+                    .bindPopup(`<b>${tram.tenTram}</b><br>${tram.diaChi}<br>Trưởng trạm: ${tram.truongTram}<br><img src="${imageUrl}" alt="Hình ảnh trạm xăng" width="100%">`)
+                    .on('mouseover', function () {
+                        this.openPopup();
+                    })
+                    .on('mouseout', function () {
+                        this.closePopup();
+                    })
+                    .on('click', () => {
+                        currentMarker = marker;
+                        showEditOrDeleteModal(marker);
+                    });
+
+// Lưu marker vào mảng markers
+                markers.push(marker);
+            });
+        });
+
+
+    // Khi click trên bản đồ để thêm mới
+    map.on('click', function (e) {
+        currentMarker = null;
+        showAddModal(e.latlng.lat, e.latlng.lng);
+    });
+
+    function showAddModal(lat, lng) {
+        document.getElementById('tramXangModalLabel').innerText = 'Thêm Trạm Xăng Mới';
+        document.getElementById('maTram').value = '';
+        document.getElementById('tenTram').value = '';
+        document.getElementById('diaChi').value = 'Đang lấy địa chỉ...';
+        document.getElementById('truongTram').value = '';
+        document.getElementById('kinhDo').value = lng;
+        document.getElementById('viDo').value = lat;
+        document.getElementById('hinhAnh').value = '';
+
+        fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('diaChi').value = data.display_name;
+            });
+
+        new bootstrap.Modal(document.getElementById('tramXangModal')).show();
+    }
+
+    function showEditOrDeleteModal(marker) {
+        const tram = marker.options.data;
+        document.getElementById('tramXangModalLabel').innerText = 'Chỉnh Sửa Trạm Xăng';
+        document.getElementById('maTram').value = tram.maTram;
+        document.getElementById('tenTram').value = tram.tenTram;
+        document.getElementById('diaChi').value = tram.diaChi;
+        document.getElementById('truongTram').value = tram.truongTram;
+        document.getElementById('kinhDo').value = tram.kinhDo;
+        document.getElementById('viDo').value = tram.viDo;
+
+        new bootstrap.Modal(document.getElementById('tramXangModal')).show();
+    }
+
+    // Xử lý form submit
+    document.getElementById('tramXangForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        let formData = new FormData(this);
+        let maTram = formData.get('maTram');
+        let method = maTram ? 'PUT' : 'POST';
+        let url = maTram ? `/api/tramxang/${maTram}` : '/api/tramxang';
+
+        fetch(url, {
+            method: method,
+            body: formData
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Có lỗi xảy ra!');
+                }
+                alert('Thêm/Sửa trạm xăng thành công!');
+                location.reload();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra! Vui lòng kiểm tra lại.');
+            });
+    });
+    // Xử lý nút xóa
+    document.getElementById('btnDelete')?.addEventListener('click', function () {
+        if (currentMarker && confirm('Bạn có chắc chắn muốn xóa trạm xăng này?')) {
+            fetch(`/api/tramxang/${currentMarker.options.data.maTram}`, {
+                method: 'DELETE'
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Có lỗi xảy ra khi xóa!');
+                    }
+                    alert('Xóa trạm xăng thành công!');
+                    location.reload();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Có lỗi xảy ra! Vui lòng kiểm tra lại.');
+                });
+        }
+    });
+    function searchStation() {
+        const searchValue = document.getElementById('searchInput').value.toLowerCase();
+        markers.forEach(marker => {
+            const tram = marker.options.data;
+            if (tram.tenTram.toLowerCase().includes(searchValue) || tram.diaChi.toLowerCase().includes(searchValue)) {
+                map.setView(marker.getLatLng(), 15);
+                marker.openPopup();
+            }
+        });
+    }
+</script>
+</body>
+
+</html>

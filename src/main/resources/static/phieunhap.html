@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Quản Lý Phiếu Nhập</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <style>
+        #main {
+            padding: 20px;
+        }
+    </style>
+</head>
+
+<body>
+<div id="main" class="container mt-4">
+    <h2>Quản Lý Phiếu Nhập</h2>
+
+    <!-- Phiếu Nhập Form -->
+    <div class="card mb-4">
+        <div class="card-header">Thêm Phiếu Nhập</div>
+        <div class="card-body">
+            <form id="phieuNhapForm">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="maTram" class="form-label">Chọn Trạm Xăng</label>
+                        <select class="form-select" id="maTram" name="maTram" required>
+                            <option value="">Chọn Trạm</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="ngayLap" class="form-label">Ngày Lập</label>
+                        <input type="datetime-local" class="form-control" id="ngayLap" name="ngayLap" required>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-primary" onclick="addPhieuNhap()">Lập Phiếu Nhập</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Danh Sách Phiếu Nhập -->
+    <div class="card">
+        <div class="card-header">Danh Sách Phiếu Nhập</div>
+        <div class="card-body">
+            <table class="table table-bordered" id="phieuNhapTable">
+                <thead>
+                <tr>
+                    <th>Mã Phiếu Nhập</th>
+                    <th>Tên Trạm</th>
+                    <th>Ngày Lập</th>
+                    <th>Thao Tác</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Chi Tiết Phiếu Nhập -->
+<div class="modal fade" id="viewChiTietPhieuNhapModal" tabindex="-1" aria-labelledby="viewChiTietPhieuNhapModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewChiTietPhieuNhapModalLabel">Chi Tiết Phiếu Nhập</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-bordered" id="chiTietPhieuNhapTable">
+                    <thead>
+                    <tr>
+                        <th>Mã Phiếu Nhập</th>
+                        <th>Mã Xăng Dầu</th>
+                        <th>Số Lượng (lít)</th>
+                    </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nhập Chi Tiết Phiếu Nhập -->
+<div class="modal fade" id="chiTietPhieuNhapModal" tabindex="-1" aria-labelledby="chiTietPhieuNhapModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="chiTietPhieuNhapModalLabel">Nhập Chi Tiết Phiếu Nhập</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="chiTietPhieuNhapForm">
+                    <input type="hidden" id="maPhieuNhapModal" name="maPhieuNhap">
+                    <div id="chiTietContainer">
+                        <!-- Các chi tiết xăng dầu sẽ được thêm ở đây -->
+                    </div>
+                    <button type="button" class="btn btn-success" onclick="addChiTietItem()">Thêm Xăng Dầu</button>
+                    <button type="button" class="btn btn-primary" onclick="addChiTietPhieuNhap()">Lưu Chi Tiết Phiếu Nhập</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Custom JS -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        loadTramXangOptions();
+        loadPhieuNhapList();
+    });
+
+    function loadTramXangOptions() {
+        fetch('/api/tramxang')
+            .then(response => response.json())
+            .then(data => {
+                const tramSelect = document.getElementById('maTram');
+                data.forEach(tram => {
+                    const option = document.createElement('option');
+                    option.value = tram.maTram;
+                    option.text = tram.tenTram;
+                    tramSelect.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function loadPhieuNhapList() {
+        fetch('/api/phieunhap')
+            .then(response => response.json())
+            .then(data => {
+                const tableBody = document.querySelector('#phieuNhapTable tbody');
+                tableBody.innerHTML = '';
+                data.forEach(phieuNhap => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${phieuNhap.maPhieuNhap}</td>
+                        <td>${phieuNhap.tenTram || 'Không xác định'}</td>
+                        <td>${new Date(phieuNhap.ngayLap).toLocaleString()}</td>
+                        <td>
+                            <button class="btn btn-primary btn-sm" onclick="editPhieuNhap(${phieuNhap.maPhieuNhap})">Sửa</button>
+                            <button class="btn btn-danger btn-sm" onclick="deletePhieuNhap(${phieuNhap.maPhieuNhap})">Xóa</button>
+                            <button class="btn btn-secondary btn-sm" onclick="showChiTietPhieuNhapModal(${phieuNhap.maPhieuNhap})">Nhập Chi Tiết</button>
+                            <button class="btn btn-info btn-sm" onclick="viewChiTietPhieuNhap(${phieuNhap.maPhieuNhap})">Xem Chi Tiết</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function addPhieuNhap() {
+        const phieuNhapDTO = {
+            maTram: document.getElementById("maTram").value,
+            ngayLap: document.getElementById("ngayLap").value
+        };
+
+        fetch('/api/phieunhap', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(phieuNhapDTO)
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error while creating phieu nhap');
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert('Lập phiếu nhập thành công!');
+                loadPhieuNhapList();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra! Vui lòng thử lại.');
+            });
+    }
+
+    function viewChiTietPhieuNhap(maPhieuNhap) {
+        fetch(`/api/chitietphieunhap?maPhieuNhap=${maPhieuNhap}`)
+            .then(response => response.json())
+            .then(data => {
+                const tableBody = document.querySelector('#chiTietPhieuNhapTable tbody');
+                tableBody.innerHTML = '';
+                data.forEach(chiTiet => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${chiTiet.maPhieuNhap}</td>
+                        <td>${chiTiet.maXangDau}</td>
+                        <td>${chiTiet.soLuong}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+                new bootstrap.Modal(document.getElementById('viewChiTietPhieuNhapModal')).show();
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function deletePhieuNhap(maPhieuNhap) {
+        if (confirm('Bạn có chắc chắn muốn xóa phiếu nhập này?')) {
+            fetch(`/api/phieunhap/${maPhieuNhap}`, {
+                method: 'DELETE'
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Error while deleting phieu nhap');
+                    }
+                    alert('Xóa phiếu nhập thành công!');
+                    loadPhieuNhapList();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Có lỗi xảy ra! Vui lòng thử lại.');
+                });
+        }
+    }
+
+    function showChiTietPhieuNhapModal(maPhieuNhap) {
+        document.getElementById('maPhieuNhapModal').value = maPhieuNhap;
+        new bootstrap.Modal(document.getElementById('chiTietPhieuNhapModal')).show();
+    }
+
+    function loadXangDauOptions(targetSelect = null) {
+        fetch('/api/xangdau')
+            .then(response => response.json())
+            .then(data => {
+                const targetSelects = targetSelect ? [targetSelect] : document.querySelectorAll('.maXangDau');
+                targetSelects.forEach(select => {
+                    select.innerHTML = ''; // Clear existing options
+                    const defaultOption = document.createElement('option');
+                    defaultOption.value = '';
+                    defaultOption.text = 'Chọn Xăng Dầu';
+                    defaultOption.disabled = true;
+                    defaultOption.selected = true;
+                    select.appendChild(defaultOption);
+                    data.forEach(xangDau => {
+                        const option = document.createElement('option');
+                        option.value = xangDau.maXangDau;
+                        option.text = xangDau.tenXangDau;
+                        select.appendChild(option);
+                    });
+                });
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function addChiTietItem() {
+        const chiTietContainer = document.getElementById('chiTietContainer');
+        const newChiTietItem = document.createElement('div');
+        newChiTietItem.classList.add('mb-3', 'chi-tiet-item');
+
+        newChiTietItem.innerHTML = `
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">Chọn Xăng Dầu</label>
+                    <select class="form-select maXangDau" name="maXangDau" required>
+                        <option value="" disabled selected>Chọn Xăng Dầu</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Số Lượng (lít)</label>
+                    <input type="number" class="form-control soLuong" name="soLuong" required min="1">
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="button" class="btn btn-danger" onclick="removeChiTietItem(this)">Xóa</button>
+                </div>
+            </div>
+        `;
+
+        chiTietContainer.appendChild(newChiTietItem);
+        loadXangDauOptions(newChiTietItem.querySelector('.maXangDau'));
+    }
+
+
+    function removeChiTietItem(button) {
+        const chiTietItem = button.closest('.chi-tiet-item');
+        chiTietItem.remove();
+    }
+
+    function addChiTietPhieuNhap() {
+        const chiTietContainer = document.getElementById('chiTietContainer');
+        const chiTietItems = chiTietContainer.querySelectorAll('.chi-tiet-item');
+
+        chiTietItems.forEach(item => {
+            const maPhieuNhap = document.getElementById('maPhieuNhapModal').value;
+            const maXangDau = item.querySelector('.maXangDau').value;
+            const soLuong = item.querySelector('.soLuong').value;
+
+            if (!maXangDau) {
+                alert('Vui lòng chọn xăng dầu cho tất cả các trường.');
+                return;
+            }
+
+            const chiTietPhieuNhapDTO = {
+                maPhieuNhap: maPhieuNhap,
+                maXangDau: maXangDau,
+                soLuong: soLuong
+            };
+
+            fetch('/api/chitietphieunhap', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(chiTietPhieuNhapDTO)
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Error while creating chi tiet phieu nhap');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Có lỗi xảy ra khi lưu chi tiết phiếu nhập! Vui lòng thử lại.');
+                });
+        });
+
+        alert('Lưu chi tiết phiếu nhập thành công!');
+        loadPhieuNhapList(); // Tải lại danh sách phiếu nhập
+    }
+    function editPhieuNhap(maPhieuNhap) {
+        fetch(`/api/phieunhap/${maPhieuNhap}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error while fetching phieu nhap');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Điền thông tin vào form để chỉnh sửa
+                document.getElementById('maTram').value = data.maTram;
+                document.getElementById('ngayLap').value = new Date(data.ngayLap).toISOString().slice(0, 16);
+
+                // Cập nhật sự kiện nút
+                const submitButton = document.querySelector('#phieuNhapForm button');
+                submitButton.innerText = 'Cập Nhật Phiếu Nhập';
+                submitButton.onclick = function () {
+                    updatePhieuNhap(maPhieuNhap);
+                };
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi tải dữ liệu phiếu nhập!');
+            });
+    }
+
+    function updatePhieuNhap(maPhieuNhap) {
+        const phieuNhapDTO = {
+            maTram: document.getElementById("maTram").value,
+            ngayLap: document.getElementById("ngayLap").value
+        };
+
+        fetch(`/api/phieunhap/${maPhieuNhap}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(phieuNhapDTO)
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error while updating phieu nhap');
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert('Cập nhật phiếu nhập thành công!');
+                // Đặt lại nút về trạng thái ban đầu
+                const submitButton = document.querySelector('#phieuNhapForm button');
+                submitButton.innerText = 'Lập Phiếu Nhập';
+                submitButton.onclick = addPhieuNhap;
+
+                loadPhieuNhapList();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra! Vui lòng thử lại.');
+            });
+    }
+
+</script>
+</body>
+
+</html>
