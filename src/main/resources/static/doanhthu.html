@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Báo Cáo Doanh Thu</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+</head>
+<body>
+<div class="container mt-5">
+  <h1>Báo Cáo Doanh Thu</h1>
+
+  <div class="card mt-4">
+    <div class="card-header">Doanh Thu Theo Hóa Đơn</div>
+    <div class="card-body">
+      <table class="table table-bordered">
+        <thead>
+        <tr>
+          <th>Mã Hóa Đơn</th>
+          <th>Doanh Thu (VND)</th>
+        </tr>
+        </thead>
+        <tbody id="doanhThuHoaDonBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card mt-4">
+    <div class="card-header">Doanh Thu Theo Tháng</div>
+    <div class="card-body">
+      <table class="table table-bordered">
+        <thead>
+        <tr>
+          <th>Tháng</th>
+          <th>Doanh Thu (VND)</th>
+        </tr>
+        </thead>
+        <tbody id="doanhThuThangBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card mt-4">
+    <div class="card-header">Doanh Thu Theo Trạm Xăng</div>
+    <div class="card-body">
+      <table class="table table-bordered">
+        <thead>
+        <tr>
+          <th>Trạm Xăng</th>
+          <th>Doanh Thu (VND)</th>
+        </tr>
+        </thead>
+        <tbody id="doanhThuTramBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  $(document).ready(function () {
+    loadDoanhThu("/api/hoadon/doanhthu/hoadon", "#doanhThuHoaDonBody");
+    loadDoanhThu("/api/hoadon/doanhthu/thang", "#doanhThuThangBody");
+    loadDoanhThu("/api/hoadon/doanhthu/tram", "#doanhThuTramBody");
+
+    function loadDoanhThu(url, tableBodyId) {
+      $.get(url, function (data) {
+        const tableBody = $(tableBodyId);
+        tableBody.empty();
+
+        data.forEach(item => {
+          const row = `
+                        <tr>
+                            <td>${item.label}</td>
+                            <td>${item.doanhThu.toFixed(2)} VND</td>
+                        </tr>`;
+          tableBody.append(row);
+        });
+      }).fail(function () {
+        alert("Không thể tải dữ liệu doanh thu.");
+      });
+    }
+  });
+</script>
+</body>
+</html>

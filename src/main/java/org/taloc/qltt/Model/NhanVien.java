@@ -1,6 +1,5 @@
 package org.taloc.qltt.Model;
 
-
 import jakarta.persistence.*;
 import java.util.Date;
 import java.util.List;
@@ -27,16 +26,17 @@ public class NhanVien {
     @Temporal(TemporalType.TIMESTAMP)
     private Date ngaySinh;
 
+    @Column(name = "so_dien_thoai", unique = true)
+    private String soDienThoai;
+
     @ManyToOne
     @JoinColumn(name = "ma_tram")
     private TramXang tramXang;
 
-    @OneToMany(mappedBy = "nhanVien", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "nhanVien", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<HoaDon> hoaDons;
 
-    // Getters và Setters
-    // ...
-
+    // Getters and Setters
     public Integer getMaNhanVien() {
         return maNhanVien;
     }
@@ -75,6 +75,14 @@ public class NhanVien {
 
     public void setNgaySinh(Date ngaySinh) {
         this.ngaySinh = ngaySinh;
+    }
+
+    public String getSoDienThoai() {
+        return soDienThoai;
+    }
+
+    public void setSoDienThoai(String soDienThoai) {
+        this.soDienThoai = soDienThoai;
     }
 
     public TramXang getTramXang() {

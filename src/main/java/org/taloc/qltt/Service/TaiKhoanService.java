@@ -1,38 +1,40 @@
 package org.taloc.qltt.Service;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.taloc.qltt.DTO.TaiKhoanDTO;
+import org.taloc.qltt.Model.NhanVien;
 import org.taloc.qltt.Model.TaiKhoan;
 import org.taloc.qltt.Repository.TaiKhoanRepository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
-public class TaiKhoanService implements UserDetailsService {
+public class TaiKhoanService {
 
     @Autowired
     private TaiKhoanRepository taiKhoanRepository;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    public List<TaiKhoanDTO> getAllTaiKhoan() {
+        return taiKhoanRepository.findAll().stream().map(this::convertToDTO).collect(Collectors.toList());
+    }
 
-    public TaiKhoan createTaiKhoan(TaiKhoan taiKhoan) {
-        if (taiKhoanRepository.existsByUsername(taiKhoan.getUsername())) {
-            throw new IllegalArgumentException("Username đã tồn tại");
+    private TaiKhoanDTO convertToDTO(TaiKhoan taiKhoan) {
+        TaiKhoanDTO dto = new TaiKhoanDTO();
+        dto.setId(taiKhoan.getId());
+        dto.setUsername(taiKhoan.getUsername());
+        dto.setRole(taiKhoan.getRole());
+
+        NhanVien nhanVien = taiKhoan.getNhanVien();
+        if (nhanVien != null) {
+            dto.setTenNhanVien(nhanVien.getTenNhanVien());
         }
 
-        // Mã hóa mật khẩu trước khi lưu
-        taiKhoan.setPassword(passwordEncoder.encode(taiKhoan.getPassword()));
-
-        // Lưu thông tin tài khoản
-        return taiKhoanRepository.save(taiKhoan);
+        return dto;
     }
+
     public void updatePassword(int id, String newPassword) {
         Optional<TaiKhoan> existingTaiKhoanOpt = taiKhoanRepository.findById(id);
         if (!existingTaiKhoanOpt.isPresent()) {
@@ -40,53 +42,7 @@ public class TaiKhoanService implements UserDetailsService {
         }
 
         TaiKhoan existingTaiKhoan = existingTaiKhoanOpt.get();
-        if (newPassword != null && !newPassword.isEmpty()) {
-            existingTaiKhoan.setPassword(passwordEncoder.encode(newPassword));
-        }
-
+        existingTaiKhoan.setPassword(newPassword); // Thay thế bằng mã hóa mật khẩu nếu cần
         taiKhoanRepository.save(existingTaiKhoan);
-    }
-
-    public TaiKhoan updateTaiKhoan(TaiKhoan updatedTaiKhoan) {
-        Optional<TaiKhoan> existingTaiKhoanOpt = taiKhoanRepository.findById(updatedTaiKhoan.getId());
-        if (!existingTaiKhoanOpt.isPresent()) {
-            throw new IllegalArgumentException("Tài khoản không tồn tại");
-        }
-
-        TaiKhoan existingTaiKhoan = existingTaiKhoanOpt.get();
-        existingTaiKhoan.setUsername(updatedTaiKhoan.getUsername());
-
-        if (updatedTaiKhoan.getPassword() != null && !updatedTaiKhoan.getPassword().isEmpty()) {
-            existingTaiKhoan.setPassword(passwordEncoder.encode(updatedTaiKhoan.getPassword()));
-        }
-
-        existingTaiKhoan.setRole(updatedTaiKhoan.getRole());
-        return taiKhoanRepository.save(existingTaiKhoan);
-    }
-
-    public void deleteTaiKhoan(int id) {
-        if (!taiKhoanRepository.existsById(id)) {
-            throw new IllegalArgumentException("Tài khoản không tồn tại");
-        }
-        taiKhoanRepository.deleteById(id);
-    }
-
-    public List<TaiKhoan> getAllTaiKhoan() {
-        return taiKhoanRepository.findAll();
-    }
-
-    public Optional<TaiKhoan> getTaiKhoanById(int id) {
-        return taiKhoanRepository.findById(id);
-    }
-
-    @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        TaiKhoan taiKhoan = taiKhoanRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        return User.builder()
-                .username(taiKhoan.getUsername())
-                .password(taiKhoan.getPassword())
-                .roles(taiKhoan.getRole())
-                .build();
     }
 }

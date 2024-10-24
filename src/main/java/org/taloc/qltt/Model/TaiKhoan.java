@@ -17,8 +17,11 @@ public class TaiKhoan {
 
     private String role;
 
+    @OneToOne
+    @JoinColumn(name = "nhan_vien_id")
+    private NhanVien nhanVien;
+
     // Getters và Setters
-    // ...
 
     public Integer getId() {
         return id;
@@ -50,5 +53,13 @@ public class TaiKhoan {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public NhanVien getNhanVien() {
+        return nhanVien;
+    }
+
+    public void setNhanVien(NhanVien nhanVien) {
+        this.nhanVien = nhanVien;
     }
 }

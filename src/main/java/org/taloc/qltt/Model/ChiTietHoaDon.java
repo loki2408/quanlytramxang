@@ -1,21 +1,13 @@
 package org.taloc.qltt.Model;
 
-
 import jakarta.persistence.*;
-import java.math.BigDecimal;
 
 @Entity
-@Table(name = "chitiethoadon")
+@Table(name = "chi_tiet_hoa_don")
 public class ChiTietHoaDon {
 
     @EmbeddedId
     private ChiTietHoaDonId id;
-
-    @Column(name = "don_gia")
-    private BigDecimal donGia;
-
-    @Column(name = "so_luong")
-    private Integer soLuong;
 
     @ManyToOne
     @MapsId("maHoaDon")
@@ -27,32 +19,18 @@ public class ChiTietHoaDon {
     @JoinColumn(name = "ma_xang_dau")
     private XangDau xangDau;
 
+    private double soLuong;
+    private double donGia;
+
+    private double thanhTien;
+
     // Getters và Setters
-    // ...
-
-
     public ChiTietHoaDonId getId() {
         return id;
     }
 
     public void setId(ChiTietHoaDonId id) {
         this.id = id;
-    }
-
-    public BigDecimal getDonGia() {
-        return donGia;
-    }
-
-    public void setDonGia(BigDecimal donGia) {
-        this.donGia = donGia;
-    }
-
-    public Integer getSoLuong() {
-        return soLuong;
-    }
-
-    public void setSoLuong(Integer soLuong) {
-        this.soLuong = soLuong;
     }
 
     public HoaDon getHoaDon() {
@@ -69,5 +47,28 @@ public class ChiTietHoaDon {
 
     public void setXangDau(XangDau xangDau) {
         this.xangDau = xangDau;
+    }
+
+    public double getSoLuong() {
+        return soLuong;
+    }
+
+    public void setSoLuong(double soLuong) {
+        this.soLuong = soLuong;
+    }
+
+    public double getDonGia() {
+        return donGia;
+    }
+
+    public void setDonGia(double donGia) {
+        this.donGia = donGia;
+    }
+
+    public double getThanhTien() {
+        return soLuong * donGia;
+    }
+
+    public void setThanhTien(double v) {
     }
 }

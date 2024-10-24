@@ -1,10 +1,293 @@
 <!DOCTYPE html>
-<html lang="en">
+<html xmlns:th="http://www.thymeleaf.org">
+
 <head>
   <meta charset="UTF-8">
-  <title>$Title$</title>
+  <title>Quản Lý Nhân Viên</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Custom CSS -->
+  <style>
+    #main {
+      padding: 20px;
+    }
+  </style>
 </head>
+
 <body>
-$END$
+<div id="main" class="container mt-4">
+  <h2>Quản Lý Nhân Viên</h2>
+
+  <!-- Thêm Nhân Viên Form -->
+  <div class="card mb-4">
+    <div class="card-header">Đăng Ký Nhân Viên Mới</div>
+    <div class="card-body">
+      <form id="nhanVienForm">
+        <div class="row mb-3">
+          <div class="col-md-4">
+            <label for="tenNhanVien" class="form-label">Tên Nhân Viên</label>
+            <input type="text" class="form-control" id="tenNhanVien" name="tenNhanVien" required>
+          </div>
+          <div class="col-md-4">
+            <label for="chucVu" class="form-label">Chức Vụ</label>
+            <select class="form-select" id="chucVu" name="chucVu" required>
+              <option value="">Chọn Chức Vụ</option>
+              <option value="TRUONG_TRAM">Trưởng Trạm</option>
+              <option value="NHAN_VIEN">Nhân Viên</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label for="ngaySinh" class="form-label">Ngày Sinh</label>
+            <input type="date" class="form-control" id="ngaySinh" name="ngaySinh" required>
+          </div>
+        </div>
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="diaChi" class="form-label">Địa Chỉ</label>
+            <input type="text" class="form-control" id="diaChi" name="diaChi" required>
+          </div>
+          <div class="col-md-6">
+            <label for="soDienThoai" class="form-label">Số Điện Thoại</label>
+            <input type="text" class="form-control" id="soDienThoai" name="soDienThoai" required>
+          </div>
+        </div>
+        <button type="button" class="btn btn-primary" onclick="createNhanVien()">Đăng Ký Nhân Viên</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Danh Sách Nhân Viên -->
+  <div class="card">
+    <div class="card-header">Danh Sách Nhân Viên</div>
+    <div class="card-body">
+      <table class="table table-bordered" id="nhanVienTable">
+        <thead>
+        <tr>
+          <th>Mã Nhân Viên</th>
+          <th>Tên Nhân Viên</th>
+          <th>Chức Vụ</th>
+          <th>Địa Chỉ</th>
+          <th>Ngày Sinh</th>
+          <th>Số Điện Thoại</th>
+          <th>Thao Tác</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Nhân Viên Modal -->
+<div class="modal fade" id="editNhanVienModal" tabindex="-1" aria-labelledby="editNhanVienModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editNhanVienModalLabel">Sửa Thông Tin Nhân Viên</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="editNhanVienForm">
+          <div class="mb-3">
+            <label for="editMaNhanVien" class="form-label">Mã Nhân Viên</label>
+            <input type="text" class="form-control" id="editMaNhanVien" name="editMaNhanVien" readonly>
+          </div>
+          <div class="mb-3">
+            <label for="editTenNhanVien" class="form-label">Tên Nhân Viên</label>
+            <input type="text" class="form-control" id="editTenNhanVien" name="editTenNhanVien" required>
+          </div>
+          <div class="mb-3">
+            <label for="editChucVu" class="form-label">Chức Vụ</label>
+            <select class="form-select" id="editChucVu" name="editChucVu" required>
+              <option value="TRUONG_TRAM">Trưởng Trạm</option>
+              <option value="NHAN_VIEN">Nhân Viên</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="editNgaySinh" class="form-label">Ngày Sinh</label>
+            <input type="date" class="form-control" id="editNgaySinh" name="editNgaySinh" required>
+          </div>
+          <div class="mb-3">
+            <label for="editDiaChi" class="form-label">Địa Chỉ</label>
+            <input type="text" class="form-control" id="editDiaChi" name="editDiaChi" required>
+          </div>
+          <div class="mb-3">
+            <label for="editSoDienThoai" class="form-label">Số Điện Thoại</label>
+            <input type="text" class="form-control" id="editSoDienThoai" name="editSoDienThoai" required>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+        <button type="button" class="btn btn-primary" onclick="updateNhanVien()">Lưu Thay Đổi</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Custom JS -->
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    loadNhanVienList();
+  });
+
+  function loadNhanVienList() {
+    fetch('/api/nhanvien')
+            .then(response => {
+              if (!response.ok) {
+                throw new Error('Error while fetching data');
+              }
+              return response.json();
+            })
+            .then(data => {
+              console.log('Dữ liệu nhân viên nhận được:', data); // Ghi log để kiểm tra dữ liệu trả về
+              const tableBody = document.querySelector('#nhanVienTable tbody');
+              tableBody.innerHTML = ''; // Clear existing rows
+              if (data && data.length > 0) {
+                data.forEach(nhanVien => {
+                  const row = document.createElement('tr');
+                  row.innerHTML = `
+            <td>${nhanVien.maNhanVien}</td>
+            <td>${nhanVien.tenNhanVien}</td>
+            <td>${nhanVien.chucVu}</td>
+            <td>${nhanVien.diaChi}</td>
+            <td>${nhanVien.ngaySinh ? new Date(nhanVien.ngaySinh).toLocaleDateString() : ''}</td>
+            <td>${nhanVien.soDienThoai || ''}</td>
+            <td>
+              <button class="btn btn-primary btn-sm" onclick="editNhanVien(${nhanVien.maNhanVien})">Đổi Thông Tin</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteNhanVien(${nhanVien.maNhanVien})">Xóa Nhân Viên</button>
+            </td>
+          `;
+                  tableBody.appendChild(row);
+                });
+              } else {
+                tableBody.innerHTML = '<tr><td colspan="7">Không có nhân viên nào.</td></tr>';
+              }
+            })
+            .catch(error => {
+              console.error('Error:', error);
+              alert('Có lỗi xảy ra khi tải dữ liệu.');
+            });
+  }
+
+
+  function createNhanVien() {
+    const nhanVienDTO = {
+      tenNhanVien: document.getElementById("tenNhanVien").value,
+      chucVu: document.getElementById("chucVu").value,
+      ngaySinh: document.getElementById("ngaySinh").value,
+      diaChi: document.getElementById("diaChi").value,
+      soDienThoai: document.getElementById("soDienThoai").value
+    };
+
+    fetch('/api/nhanvien', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(nhanVienDTO)
+    })
+            .then(response => {
+              if (!response.ok) {
+                throw new Error('Error while creating nhan vien');
+              }
+              return response.json();
+            })
+            .then(data => {
+              alert('Đăng ký nhân viên thành công!');
+              loadNhanVienList();
+            })
+            .catch(error => {
+              console.error('Error:', error);
+              alert('Có lỗi xảy ra! Vui lòng thử lại.');
+            });
+  }
+
+  function deleteNhanVien(id) {
+    if (confirm('Bạn có chắc chắn muốn xóa nhân viên này?')) {
+      fetch(`/api/nhanvien/${id}`, {
+        method: 'DELETE'
+      })
+              .then(response => {
+                if (!response.ok) {
+                  throw new Error('Error while deleting nhan vien');
+                }
+                alert('Xóa nhân viên thành công!');
+                loadNhanVienList();
+              })
+              .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra! Vui lòng thử lại.');
+              });
+    }
+  }
+
+  function editNhanVien(id) {
+    fetch(`/api/nhanvien/${id}`, { method: 'GET' })  // Explicitly set the method as GET
+            .then(response => {
+              if (!response.ok) {
+                throw new Error('Error while fetching nhan vien');
+              }
+              return response.json();
+            })
+            .then(nhanVien => {
+              console.log(nhanVien);  // Log response to check for correct data
+              // Fill in the employee's details in the edit form
+              document.getElementById("editMaNhanVien").value = nhanVien.maNhanVien;
+              document.getElementById("editTenNhanVien").value = nhanVien.tenNhanVien;
+              document.getElementById("editChucVu").value = nhanVien.chucVu;
+              document.getElementById("editNgaySinh").value = nhanVien.ngaySinh ? new Date(nhanVien.ngaySinh).toISOString().split('T')[0] : '';
+              document.getElementById("editDiaChi").value = nhanVien.diaChi;
+              document.getElementById("editSoDienThoai").value = nhanVien.soDienThoai;
+
+              // Show the edit modal
+              new bootstrap.Modal(document.getElementById('editNhanVienModal')).show();
+            })
+            .catch(error => {
+              console.error('Error:', error);
+              alert('Có lỗi xảy ra khi tải dữ liệu nhân viên!');
+            });
+  }
+
+  function updateNhanVien() {
+    const nhanVienDTO = {
+      maNhanVien: document.getElementById("editMaNhanVien").value,
+      tenNhanVien: document.getElementById("editTenNhanVien").value,
+      chucVu: document.getElementById("editChucVu").value,
+      ngaySinh: document.getElementById("editNgaySinh").value,
+      diaChi: document.getElementById("editDiaChi").value,
+      soDienThoai: document.getElementById("editSoDienThoai").value
+    };
+
+    fetch(`/api/nhanvien/${nhanVienDTO.maNhanVien}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(nhanVienDTO)
+    })
+            .then(response => {
+              if (!response.ok) {
+                throw new Error('Error while updating nhan vien');
+              }
+              alert('Cập nhật thông tin nhân viên thành công!');
+              const modal = bootstrap.Modal.getInstance(document.getElementById('editNhanVienModal'));
+              modal.hide();
+              loadNhanVienList();
+            })
+            .catch(error => {
+              console.error('Error:', error);
+              alert('Có lỗi xảy ra! Vui lòng thử lại.');
+            });
+  }
+</script>
+
 </body>
+
 </html>

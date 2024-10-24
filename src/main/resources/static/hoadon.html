@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Quản Lý Hóa Đơn</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <style>
+        .modal-dialog {
+            max-width: 80%;
+        }
+        .form-control {
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class="container mt-5">
+    <h1 class="mb-4">Tạo và Quản Lý Hóa Đơn</h1>
+
+    <button class="btn btn-primary mb-3" data-toggle="modal" data-target="#createHoaDonModal">Tạo Hóa Đơn</button>
+
+    <table class="table table-bordered">
+        <thead>
+        <tr>
+            <th>Mã Hóa Đơn</th>
+            <th>Tên Khách Hàng</th>
+            <th>Ngày Lập</th>
+            <th>Tổng Tiền</th>
+            <th>Hành Động</th>
+        </tr>
+        </thead>
+        <tbody id="hoaDonTable"></tbody>
+    </table>
+
+    <!-- Modal: Tạo Hóa Đơn -->
+    <div class="modal fade" id="createHoaDonModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Tạo Hóa Đơn</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="hoaDonForm">
+                        <div class="form-group">
+                            <label>Tên Khách Hàng</label>
+                            <input type="text" class="form-control" name="tenKhachHang" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Trạm Xăng</label>
+                            <select class="form-control" name="maTram" id="maTramSelect" required></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Nhân Viên</label>
+                            <select class="form-control" name="maNhanVien" id="maNhanVienSelect" required></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Ngày Lập</label>
+                            <input type="date" class="form-control" name="ngayLap" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Tạo Hóa Đơn</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Hiển Thị Hóa Đơn -->
+    <div class="modal fade" id="viewHoaDonModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Hóa Đơn Chi Tiết</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body" id="hoaDonContent">
+                    <!-- Nội dung hóa đơn sẽ được tải động vào đây -->
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" onclick="window.print()">In Hóa Đơn</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            let selectedHoaDonId = null;
+            let xangDauOptions = ''; // Lưu trữ danh sách xăng dầu để sử dụng lại
+            let xangDauMap = new Map(); // Lưu tên xăng dầu theo ID
+
+            // Tải danh sách xăng dầu và lưu vào Map
+            function loadXangDauOptions() {
+                $.get('/api/xangdau', function (data) {
+                    data.forEach(xd => {
+                        xangDauMap.set(xd.maXangDau, xd.tenXangDau);
+                    });
+                });
+            }
+
+            loadTramXangOptions();
+            loadNhanVienOptions();
+            loadXangDauOptions(); // Tải danh sách xăng dầu ban đầu
+            loadHoaDons();
+
+// Nút "Xem" hóa đơn
+            $(document).on('click', '.xemHoaDonBtn', function () {
+                const hoaDonId = $(this).data('id');
+
+                $.get(`/api/chitiethoadon/hoadon/${hoaDonId}`, function (chiTietList) {
+                    let content = `
+                <h3 class="text-center">CÔNG TY TNHH XĂNG DẦU THÀNH LỘC</h3>
+                <p class="text-center">Địa chỉ: 87, Ấp Hóa Tiến, Xã Mong Thọ, Châu Thành, Kiên Giang</p>
+                <h4 class="text-center mt-4">HÓA ĐƠN BÁN HÀNG</h4>
+                <p><strong>Mã hóa đơn:</strong> ${hoaDonId}</p>
+                <table class="table table-bordered mt-4">
+                    <thead>
+                        <tr>
+                            <th>Loại Xăng Dầu</th>
+                            <th>Số Lượng</th>
+                            <th>Đơn Giá</th>
+                            <th>Thành Tiền</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+                    chiTietList.forEach(chiTiet => {
+                        const tenXangDau = xangDauMap.get(chiTiet.xangDau) || 'Không xác định';
+                        content += `
+                    <tr>
+                        <td>${tenXangDau}</td>
+                        <td>${chiTiet.soLuong}</td>
+                        <td>${chiTiet.donGia}</td>
+                        <td>${chiTiet.thanhTien}</td>
+                    </tr>`;
+                    });
+
+                    content += `</tbody></table>`;
+                    $('#hoaDonContent').html(content);
+                    $('#viewHoaDonModal').modal('show');
+                }).fail(function () {
+                    alert("Không thể tải chi tiết hóa đơn.");
+                });
+            });
+
+            // Thêm hóa đơn mới
+            $('#hoaDonForm').submit(function (e) {
+                e.preventDefault();
+                const formData = {
+                    tenKhachHang: $('input[name="tenKhachHang"]').val(),
+                    maTram: $('#maTramSelect').val(),
+                    maNhanVien: $('#maNhanVienSelect').val(),
+                    ngayLap: $('input[name="ngayLap"]').val()
+                };
+
+                $.ajax({
+                    url: '/api/hoadon',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(formData),
+                    success: function () {
+                        $('#createHoaDonModal').modal('hide');
+                        loadHoaDons();
+                    },
+                    error: function () {
+                        alert("Có lỗi xảy ra khi tạo hóa đơn.");
+                    }
+                });
+            });
+
+            // Hiển thị modal nhập chi tiết cho hóa đơn đã chọn
+            $(document).on('click', '.nhapChiTietBtn', function () {
+                selectedHoaDonId = $(this).data('id');
+                $('#addChiTietModal').modal('show');
+                $('#chiTietBody').empty(); // Reset lại nội dung của bảng chi tiết hóa đơn
+            });
+
+            // Thêm một hàng chi tiết hóa đơn mới
+            $('#addRowBtn').click(function () {
+                const row = `
+        <tr>
+            <td>
+                <select class="form-control xangDauSelect" required>
+                    ${xangDauOptions}
+                </select>
+            </td>
+            <td>
+                <input type="number" class="form-control soLuongInput" min="1" value="1" required>
+            </td>
+            <td>
+                <input type="text" class="form-control donGiaInput" readonly>
+            </td>
+            <td>
+                <input type="text" class="form-control thanhTienInput" readonly>
+            </td>
+            <td>
+                <button type="button" class="btn btn-danger removeRowBtn">Xóa</button>
+            </td>
+        </tr>`;
+                $('#chiTietBody').append(row);
+            });
+
+            // Xóa một hàng chi tiết hóa đơn
+            $(document).on('click', '.removeRowBtn', function () {
+                $(this).closest('tr').remove();
+                tinhTongTien(); // Tính lại tổng tiền sau khi xóa hàng
+            });
+
+            // Khi chọn loại xăng dầu, tự động điền đơn giá và tính thành tiền
+            $(document).on('change', '.xangDauSelect', function () {
+                const maXangDau = $(this).val();
+                const row = $(this).closest('tr');
+                const donGiaInput = row.find('.donGiaInput');
+                const soLuongInput = row.find('.soLuongInput');
+                const thanhTienInput = row.find('.thanhTienInput');
+
+                $.get(`/api/xangdau/${maXangDau}`, function (data) {
+                    donGiaInput.val(data.gia);
+                    tinhThanhTien(soLuongInput, donGiaInput, thanhTienInput);
+                });
+            });
+
+            // Khi thay đổi số lượng, tự động tính lại thành tiền
+            $(document).on('input', '.soLuongInput', function () {
+                const row = $(this).closest('tr');
+                const donGiaInput = row.find('.donGiaInput');
+                const thanhTienInput = row.find('.thanhTienInput');
+                tinhThanhTien($(this), donGiaInput, thanhTienInput);
+            });
+
+            // Hàm tính thành tiền cho một hàng
+            function tinhThanhTien(soLuongInput, donGiaInput, thanhTienInput) {
+                const soLuong = parseFloat(soLuongInput.val()) || 0;
+                const donGia = parseFloat(donGiaInput.val()) || 0;
+                const thanhTien = soLuong * donGia;
+                thanhTienInput.val(thanhTien.toFixed(2));
+                tinhTongTien(); // Tính lại tổng tiền của hóa đơn
+            }
+
+            // Hàm tính tổng tiền của toàn bộ hóa đơn
+            function tinhTongTien() {
+                let tongTien = 0;
+                $('.thanhTienInput').each(function () {
+                    tongTien += parseFloat($(this).val()) || 0;
+                });
+                $('#tongTien').text(tongTien.toFixed(2) + ' VND');
+            }
+
+            // Thêm chi tiết hóa đơn
+            $('#chiTietForm').submit(function (e) {
+                e.preventDefault();
+                const chiTietData = [];
+
+                $('#chiTietBody tr').each(function () {
+                    const maXangDau = $(this).find('.xangDauSelect').val();
+                    const soLuong = parseFloat($(this).find('.soLuongInput').val());
+                    const donGia = parseFloat($(this).find('.donGiaInput').val());
+                    const thanhTien = soLuong * donGia;
+
+                    chiTietData.push({
+                        hoaDon: selectedHoaDonId,
+                        xangDau: parseInt(maXangDau),
+                        soLuong: soLuong,
+                        donGia: donGia,
+                        thanhTien: thanhTien
+                    });
+                });
+
+                $.ajax({
+                    url: '/api/chitiethoadon/add',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(chiTietData),
+                    success: function () {
+                        $('#addChiTietModal').modal('hide');
+                        loadHoaDons();
+                    },
+                    error: function (xhr) {
+                        console.error('Lỗi:', xhr.responseText);
+                        alert('Có lỗi xảy ra khi thêm chi tiết hóa đơn.');
+                    }
+                });
+            });
+
+
+
+            // Hàm load danh sách hóa đơn
+            function loadHoaDons() {
+                $.get('/api/hoadon/all', function (data) {
+                    const tableBody = $('#hoaDonTable');
+                    tableBody.empty();
+                    data.forEach(function (invoice) {
+                        const row = `
+                            <tr>
+                                <td>${invoice.maHoaDon}</td>
+                                <td>${invoice.tenKhachHang}</td>
+                                <td>${invoice.ngayLap}</td>
+                                <td>${invoice.tongTien} VND</td>
+                                <td>
+                                    <button class="btn btn-secondary btn-sm xemHoaDonBtn" data-id="${invoice.maHoaDon}">Xem</button>
+                                    <button class="btn btn-info btn-sm nhapChiTietBtn" data-id="${invoice.maHoaDon}">Nhập Chi Tiết</button>
+                                </td>
+                            </tr>`;
+                        tableBody.append(row);
+                    });
+                });
+            }
+        });
+
+
+            // Hàm tải danh sách trạm xăng
+            function loadTramXangOptions() {
+                $.get('/api/tramxang', function (data) {
+                    const select = $('#maTramSelect');
+                    select.empty();
+                    data.forEach(tram => select.append(new Option(tram.tenTram, tram.maTram)));
+                });
+            }
+
+            // Hàm tải danh sách nhân viên
+            function loadNhanVienOptions() {
+                $.get('/api/nhanvien', function (data) {
+                    const select = $('#maNhanVienSelect');
+                    select.empty();
+                    data.forEach(nv => select.append(new Option(nv.tenNhanVien, nv.maNhanVien)));
+                });
+            }
+
+            // Hàm tải danh sách xăng dầu một lần
+            function loadXangDauOptions() {
+                $.get('/api/xangdau', function (data) {
+                    xangDauOptions = data.map(xd => `<option value="${xd.maXangDau}">${xd.tenXangDau}</option>`).join('');
+                });
+            }
+
+    </script>
+</div>
+</body>
+</html>

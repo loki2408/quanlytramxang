@@ -16,29 +16,53 @@
         #map {
             height: 800px;
             width: 1500px;
+            margin-left: 270px; /* Khi sidebar mở */
+            transition: all 0.3s ease-in-out;
         }
+
         #sidebar {
             width: 250px;
             height: 100vh;
             position: fixed;
             top: 0;
-            left: 0;
+            left: -250px;
             background-color: #f8f9fa;
             padding: 15px;
             overflow-y: auto;
+            transition: all 0.3s ease-in-out;
         }
 
-        #search-bar {
-            margin-bottom: 15px;
+        #sidebar.active {
+            left: 0;
+        }
+
+        #toggleSidebar {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1001;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 8px 10px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            #map {
+                margin-left: 20px !important;
+            }
         }
     </style>
 </head>
 
 <body>
-<div class="container mt-4">
-    <h2>Quản Lý Trạm Xăng</h2>
-    <div id="map"></div>
-</div>
+<!-- Sidebar toggle button -->
+<button id="toggleSidebar" class="btn">
+    <i class="bi bi-list"></i>
+</button>
+
+<!-- Sidebar -->
 <div id="sidebar">
     <h4>Chức Năng Quản Lý</h4>
     <ul class="nav flex-column">
@@ -52,13 +76,13 @@
             <a class="nav-link" href="/xangdau.html">Quản Lý Xăng Dầu</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" href="#">Quản Lý Doanh Thu</a>
+            <a class="nav-link" href="/doanhthu.html">Quản Lý Doanh Thu</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" href="#">Quản Lý Nhân Viên</a>
+            <a class="nav-link" href="/nhanvien.html">Quản Lý Nhân Viên</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" href="#">Quản Lý Hóa Đơn</a>
+            <a class="nav-link" href="/hoadon.html">Quản Lý Hóa Đơn</a>
         </li>
         <li class="nav-item">
             <a class="nav-link" href="/phieunhap.html">Quản Lý Phiếu Nhập</a>
@@ -77,6 +101,9 @@
         <button class="btn btn-primary mt-2" onclick="searchStation()">Tìm Kiếm</button>
     </div>
 </div>
+
+<!-- Main Content -->
+<div id="map" class="container mt-4"></div>
 
 <!-- Modal thêm/sửa trạm xăng -->
 <div class="modal fade" id="tramXangModal" tabindex="-1" aria-labelledby="tramXangModalLabel" aria-hidden="true">
@@ -132,6 +159,22 @@
 
 <!-- Custom JS -->
 <script>
+    // Sidebar toggle functionality
+    document.addEventListener('DOMContentLoaded', function () {
+        const toggleSidebarButton = document.getElementById('toggleSidebar');
+        const sidebar = document.getElementById('sidebar');
+        const map = document.getElementById('map');
+
+        toggleSidebarButton.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+            if (sidebar.classList.contains('active')) {
+                map.style.marginLeft = '270px';
+            } else {
+                map.style.marginLeft = '20px';
+            }
+        });
+    });
+
     let markers = [];
     let map = L.map('map').setView([9.9125186, 105.1474038], 13); // Vị trí mặc định
 
@@ -160,11 +203,9 @@
                         showEditOrDeleteModal(marker);
                     });
 
-// Lưu marker vào mảng markers
                 markers.push(marker);
             });
         });
-
 
     // Khi click trên bản đồ để thêm mới
     map.on('click', function (e) {
@@ -229,6 +270,7 @@
                 alert('Có lỗi xảy ra! Vui lòng kiểm tra lại.');
             });
     });
+
     // Xử lý nút xóa
     document.getElementById('btnDelete')?.addEventListener('click', function () {
         if (currentMarker && confirm('Bạn có chắc chắn muốn xóa trạm xăng này?')) {
@@ -248,6 +290,7 @@
                 });
         }
     });
+
     function searchStation() {
         const searchValue = document.getElementById('searchInput').value.toLowerCase();
         markers.forEach(marker => {

@@ -1,45 +1,38 @@
 package org.taloc.qltt.Model;
 
-
-import jakarta.persistence.*;
+import jakarta.persistence.Embeddable;
 import java.io.Serializable;
 import java.util.Objects;
 
 @Embeddable
 public class ChiTietHoaDonId implements Serializable {
 
-    @Column(name = "MaHoaDon")
-    private Integer maHoaDon;
+    private int maHoaDon;
+    private int maXangDau;
 
-    @Column(name = "MaXangDau")
-    private Integer maXangDau;
-
-    // Constructors, Getters, Setters, equals(), hashCode()
-    // ...
-
-
-    public ChiTietHoaDonId(Integer maHoaDon, Integer maXangDau) {
+    public ChiTietHoaDonId(int maHoaDon, int maXangDau) {
         this.maHoaDon = maHoaDon;
         this.maXangDau = maXangDau;
     }
 
-    public ChiTietHoaDonId() {
 
+    public ChiTietHoaDonId() {
     }
 
-    public Integer getMaHoaDon() {
+    // Getters và Setters
+    public int getMaHoaDon() {
         return maHoaDon;
     }
 
-    public void setMaHoaDon(Integer maHoaDon) {
+    public void setMaHoaDon(int maHoaDon) {
         this.maHoaDon = maHoaDon;
     }
 
-    public Integer getMaXangDau() {
+    public int getMaXangDau() {
         return maXangDau;
     }
 
-    public void setMaXangDau(Integer maXangDau) {
+    public void setMaXangDau(int maXangDau) {
         this.maXangDau = maXangDau;
     }
 
@@ -48,7 +41,7 @@ public class ChiTietHoaDonId implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ChiTietHoaDonId that = (ChiTietHoaDonId) o;
-        return Objects.equals(maHoaDon, that.maHoaDon) && Objects.equals(maXangDau, that.maXangDau);
+        return maHoaDon == that.maHoaDon && maXangDau == that.maXangDau;
     }
 
     @Override

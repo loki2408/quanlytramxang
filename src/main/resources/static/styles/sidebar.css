@@ -1,0 +1,62 @@
+/* CSS cho sidebar */
+#sidebar {
+    width: 250px;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background-color: #343a40; /* Màu nền tối */
+    color: #fff;
+    padding: 20px;
+    transition: transform 0.3s ease-in-out, width 0.3s ease-in-out;
+    z-index: 1000;
+}
+
+#sidebar.active {
+    transform: translateX(-100%);
+}
+
+#main {
+    margin-left: 270px;
+    padding: 20px;
+    transition: margin-left 0.3s ease-in-out;
+}
+
+#main.sidebar-collapsed {
+    margin-left: 20px;
+}
+
+#toggleSidebar {
+    background-color: #343a40;
+    color: #fff;
+    border: none;
+    padding: 8px 10px;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+}
+
+#toggleSidebar:hover {
+    background-color: #495057;
+}
+
+@media (max-width: 768px) {
+    #sidebar {
+        transform: translateX(-100%);
+    }
+
+    #sidebar.active {
+        transform: translateX(0);
+    }
+
+    #main {
+        margin-left: 20px !important;
+    }
+
+    #main.sidebar-collapsed {
+        margin-left: 20px;
+    }
+
+    #toggleSidebar {
+        display: block;
+    }
+}
