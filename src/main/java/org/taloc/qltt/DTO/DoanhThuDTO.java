@@ -1,29 +1,31 @@
 package org.taloc.qltt.DTO;
 
-public class DoanhThuDTO {
-    private String label;  // Nhãn có thể là ngày, tháng, năm hoặc tên trạm
-    private double totalRevenue;  // Tổng doanh thu
+import java.time.LocalDate;
 
-    // Constructor
-    public DoanhThuDTO(String label, double totalRevenue) {
-        this.label = label;
-        this.totalRevenue = totalRevenue;
-    }
+    public class DoanhThuDTO {
+        private String nhan;          // Nhãn (ngày, tháng, năm, trạm)
+        private double tongDoanhThu;  // Tổng doanh thu
 
-    // Getters và Setters
-    public String getLabel() {
-        return label;
-    }
+        // Constructor dành cho truy vấn nhóm
+        public DoanhThuDTO(String nhan, double tongDoanhThu) {
+            this.nhan = nhan;
+            this.tongDoanhThu = tongDoanhThu;
+        }
 
-    public void setLabel(String label) {
-        this.label = label;
-    }
+        // Getters và Setters
+        public String getNhan() {
+            return nhan;
+        }
 
-    public double getTotalRevenue() {
-        return totalRevenue;
-    }
+        public void setNhan(String nhan) {
+            this.nhan = nhan;
+        }
 
-    public void setTotalRevenue(double totalRevenue) {
-        this.totalRevenue = totalRevenue;
+        public double getTongDoanhThu() {
+            return tongDoanhThu;
+        }
+
+        public void setTongDoanhThu(double tongDoanhThu) {
+            this.tongDoanhThu = tongDoanhThu;
+        }
     }
-}

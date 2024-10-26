@@ -1,85 +1,167 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
-  <title>Báo Cáo Doanh Thu</title>
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Báo cáo Doanh Thu</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+  <style>
+    .modal-content {
+      border-radius: 10px;
+    }
+  </style>
 </head>
 <body>
 <div class="container mt-5">
-  <h1>Báo Cáo Doanh Thu</h1>
+  <h1 class="text-center">Báo cáo Doanh Thu</h1>
 
-  <div class="card mt-4">
-    <div class="card-header">Doanh Thu Theo Hóa Đơn</div>
-    <div class="card-body">
-      <table class="table table-bordered">
-        <thead>
-        <tr>
-          <th>Mã Hóa Đơn</th>
-          <th>Doanh Thu (VND)</th>
-        </tr>
-        </thead>
-        <tbody id="doanhThuHoaDonBody"></tbody>
-      </table>
+  <div class="row mt-4 mb-4">
+    <div class="col-md-5">
+      <label for="startDate">Từ Ngày:</label>
+      <input type="date" id="startDate" class="form-control">
+    </div>
+    <div class="col-md-5">
+      <label for="endDate">Đến Ngày:</label>
+      <input type="date" id="endDate" class="form-control">
+    </div>
+    <div class="col-md-2 d-flex align-items-end">
+      <button class="btn btn-primary w-100" onclick="loadDoanhThuTheoNgay()">Lọc Theo Ngày</button>
     </div>
   </div>
 
-  <div class="card mt-4">
-    <div class="card-header">Doanh Thu Theo Tháng</div>
-    <div class="card-body">
-      <table class="table table-bordered">
-        <thead>
-        <tr>
-          <th>Tháng</th>
-          <th>Doanh Thu (VND)</th>
-        </tr>
-        </thead>
-        <tbody id="doanhThuThangBody"></tbody>
-      </table>
-    </div>
+  <div class="btn-group mb-4" role="group">
+    <button class="btn btn-secondary" onclick="loadDoanhThu('/api/doanhthu/thang')">Theo Tháng</button>
+    <button class="btn btn-success" onclick="loadDoanhThu('/api/doanhthu/nam')">Theo Năm</button>
+    <button class="btn btn-info" onclick="loadDoanhThu('/api/doanhthu/tram')">Theo Trạm Xăng</button>
   </div>
 
-  <div class="card mt-4">
-    <div class="card-header">Doanh Thu Theo Trạm Xăng</div>
-    <div class="card-body">
-      <table class="table table-bordered">
-        <thead>
-        <tr>
-          <th>Trạm Xăng</th>
-          <th>Doanh Thu (VND)</th>
-        </tr>
-        </thead>
-        <tbody id="doanhThuTramBody"></tbody>
-      </table>
+  <table class="table table-bordered">
+    <thead class="thead-dark">
+    <tr>
+      <th>Nhãn</th>
+      <th>Tổng Doanh Thu</th>
+      <th>Chi Tiết</th>
+    </tr>
+    </thead>
+    <tbody id="doanhThuTableBody">
+    <!-- Dữ liệu sẽ được thêm vào đây -->
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal Chi Tiết Hóa Đơn -->
+<div class="modal fade" id="chiTietModal" tabindex="-1" role="dialog" aria-labelledby="modalTitle" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalTitle">Chi Tiết Hóa Đơn</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <ul id="chiTietList">
+          <!-- Chi tiết hóa đơn sẽ được thêm ở đây -->
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
-  $(document).ready(function () {
-    loadDoanhThu("/api/hoadon/doanhthu/hoadon", "#doanhThuHoaDonBody");
-    loadDoanhThu("/api/hoadon/doanhthu/thang", "#doanhThuThangBody");
-    loadDoanhThu("/api/hoadon/doanhthu/tram", "#doanhThuTramBody");
+  function loadDoanhThuTheoNgay() {
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
 
-    function loadDoanhThu(url, tableBodyId) {
-      $.get(url, function (data) {
-        const tableBody = $(tableBodyId);
-        tableBody.empty();
-
-        data.forEach(item => {
-          const row = `
-                        <tr>
-                            <td>${item.label}</td>
-                            <td>${item.doanhThu.toFixed(2)} VND</td>
-                        </tr>`;
-          tableBody.append(row);
-        });
-      }).fail(function () {
-        alert("Không thể tải dữ liệu doanh thu.");
-      });
+    if (!startDate || !endDate) {
+      alert("Vui lòng chọn đầy đủ ngày bắt đầu và kết thúc.");
+      return;
     }
-  });
+
+    const apiUrl = `/api/doanhthu/ngay?startDate=${startDate}&endDate=${endDate}`;
+    loadDoanhThu(apiUrl);
+  }
+
+  function loadDoanhThu(apiUrl) {
+    fetch(apiUrl)
+            .then(response => {
+              if (!response.ok) {
+                throw new Error('Lỗi khi tải dữ liệu');
+              }
+              return response.json();
+            })
+            .then(data => {
+              const tableBody = document.getElementById('doanhThuTableBody');
+              tableBody.innerHTML = '';
+
+              data.forEach(item => {
+                const row = document.createElement('tr');
+
+                const labelCell = document.createElement('td');
+                labelCell.textContent = item.nhan;
+
+                const revenueCell = document.createElement('td');
+                revenueCell.textContent = new Intl.NumberFormat('vi-VN', {
+                  style: 'currency',
+                  currency: 'VND'
+                }).format(item.tongDoanhThu);
+
+                const detailButton = document.createElement('button');
+                detailButton.textContent = "Xem Chi Tiết";
+                detailButton.className = "btn btn-link";
+                detailButton.onclick = () => loadChiTietHoaDon(item.maHoaDon); // Kiểm tra item.maHoaDon tại đây
+
+                const detailCell = document.createElement('td');
+                detailCell.appendChild(detailButton);
+
+                row.appendChild(labelCell);
+                row.appendChild(revenueCell);
+                row.appendChild(detailCell);
+                tableBody.appendChild(row);
+              });
+            })
+            .catch(error => console.error('Lỗi khi tải dữ liệu:', error));
+  }
+
+  function loadChiTietHoaDon(maHoaDon) {
+    fetch(`/api/chitiethoadon/hoadon/${maHoaDon}`)
+            .then(response => {
+              if (!response.ok) {
+                throw new Error(`Lỗi API: ${response.statusText}`);
+              }
+              return response.json(); // Chuyển dữ liệu thành JSON
+            })
+            .then(data => {
+              console.log(data); // Ghi log để kiểm tra dữ liệu trả về từ API
+              if (Array.isArray(data)) {
+                const chiTietList = document.getElementById('chiTietList');
+                chiTietList.innerHTML = ''; // Xóa dữ liệu cũ trong modal
+
+                data.forEach(chiTiet => {
+                  const listItem = document.createElement('li');
+                  listItem.textContent = `Sản phẩm: ${chiTiet.sanPham}, Số lượng: ${chiTiet.soLuong}, Giá: ${chiTiet.gia}`;
+                  chiTietList.appendChild(listItem);
+                });
+
+                // Hiển thị modal sau khi dữ liệu đã được tải
+                $('#chiTietModal').modal('show');
+              } else {
+                console.error("Dữ liệu trả về không phải là mảng:", data);
+              }
+            })
+            .catch(error => {
+              console.error("Lỗi khi tải chi tiết hóa đơn:", error);
+            });
+  }
+
+
 </script>
+
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 </body>
 </html>

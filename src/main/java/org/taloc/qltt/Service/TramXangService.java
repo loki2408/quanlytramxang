@@ -23,7 +23,7 @@ public class TramXangService {
     private TramXangRepository tramXangRepository;
 
     // Đường dẫn thư mục lưu trữ hình ảnh
-    private final String uploadDir = "D:/QLTT/QLTT/src/main/resources/static/images/";
+    private final String uploadDir = "C:/QLTT/QLTT/src/main/resources/static/images/";
 
     public TramXangService() {
         // Tạo thư mục lưu trữ hình ảnh nếu chưa tồn tại

@@ -1,62 +1,128 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản Lý Trạm Xăng</title>
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css">
 
     <!-- Custom CSS -->
     <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+
         #map {
-            height: 800px;
-            width: 1500px;
-            margin-left: 270px; /* Khi sidebar mở */
+            height: calc(100vh - 56px);
+            width: 100%;
             transition: all 0.3s ease-in-out;
         }
 
         #sidebar {
-            width: 250px;
-            height: 100vh;
+            width: 280px;
+            height: calc(100vh - 56px);
             position: fixed;
-            top: 0;
-            left: -250px;
-            background-color: #f8f9fa;
-            padding: 15px;
+            top: 56px;
+            left: -280px;
+            background-color: #ffffff;
+            padding: 60px 20px 20px; /* Added top padding */
             overflow-y: auto;
             transition: all 0.3s ease-in-out;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            z-index: 1001; /* Increased z-index */
         }
 
         #sidebar.active {
             left: 0;
         }
 
+        .nav-link {
+            color: #495057;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .nav-link:hover {
+            background-color: #e9ecef;
+            color: #007bff;
+        }
+
+        .nav-link.active {
+            background-color: #007bff;
+            color: #ffffff;
+        }
+
         #toggleSidebar {
             position: fixed;
-            top: 15px;
-            left: 15px;
-            z-index: 1001;
+            top: 70px;
+            left: 20px; /* Changed from 15px to 20px */
+            z-index: 1002; /* Increased z-index to ensure it's above the sidebar */
             background-color: #007bff;
             color: #fff;
             border: none;
-            padding: 8px 10px;
+            padding: 10px 15px;
             cursor: pointer;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .navbar {
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
         @media (max-width: 768px) {
-            #map {
-                margin-left: 20px !important;
+            #sidebar {
+                width: 100%;
+                left: -100%;
             }
+            #sidebar.active {
+                left: 0;
+            }
+        }
+
+        .leaflet-top.leaflet-left {
+            top: 70px; /* Adjust this value as needed */
         }
     </style>
 </head>
 
 <body>
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">
+            <i class="bi bi-fuel-pump-fill me-2"></i>
+            Quản Lý Trạm Xăng
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="#" th:text="${#authentication.name}">
+                        <i class="bi bi-person-circle me-1"></i>
+                        User
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/logout">
+                        <i class="bi bi-box-arrow-right me-1"></i>
+                        Đăng Xuất
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
 <!-- Sidebar toggle button -->
 <button id="toggleSidebar" class="btn">
     <i class="bi bi-list"></i>
@@ -64,77 +130,92 @@
 
 <!-- Sidebar -->
 <div id="sidebar">
-    <h4>Chức Năng Quản Lý</h4>
+    <h4 class="mb-4">Chức Năng Quản Lý</h4>
     <ul class="nav flex-column">
-        <li class="nav-item">
-            <a class="nav-link" href="/index">Quản Lý Trạm Xăng</a>
+        <li class="nav-item mb-2">
+            <a class="nav-link active" href="/index">
+                <i class="bi bi-fuel-pump me-2"></i>Quản Lý Trạm Xăng
+            </a>
         </li>
-        <li class="nav-item">
-            <a class="nav-link" href="/kho.html">Quản Lý Kho</a>
+        <li class="nav-item mb-2">
+            <a class="nav-link" href="/kho">
+                <i class="bi bi-box-seam me-2"></i>Quản Lý Kho
+            </a>
         </li>
-        <li class="nav-item">
-            <a class="nav-link" href="/xangdau.html">Quản Lý Xăng Dầu</a>
+        <li class="nav-item mb-2">
+            <a class="nav-link" href="/xangdau.html">
+                <i class="bi bi-droplet-half me-2"></i>Quản Lý Xăng Dầu
+            </a>
         </li>
-        <li class="nav-item">
-            <a class="nav-link" href="/doanhthu.html">Quản Lý Doanh Thu</a>
+        <li class="nav-item mb-2">
+            <a class="nav-link" href="/doanhthu.html">
+                <i class="bi bi-graph-up me-2"></i>Quản Lý Doanh Thu
+            </a>
         </li>
-        <li class="nav-item">
-            <a class="nav-link" href="/nhanvien.html">Quản Lý Nhân Viên</a>
+        <li class="nav-item mb-2">
+            <a class="nav-link" href="/nhanvien.html">
+                <i class="bi bi-people me-2"></i>Quản Lý Nhân Viên
+            </a>
         </li>
-        <li class="nav-item">
-            <a class="nav-link" href="/hoadon.html">Quản Lý Hóa Đơn</a>
+        <li class="nav-item mb-2">
+            <a class="nav-link" href="/hoadon.html">
+                <i class="bi bi-receipt me-2"></i>Quản Lý Hóa Đơn
+            </a>
         </li>
-        <li class="nav-item">
-            <a class="nav-link" href="/phieunhap.html">Quản Lý Phiếu Nhập</a>
+        <li class="nav-item mb-2">
+            <a class="nav-link" href="/phieunhap.html">
+                <i class="bi bi-file-earmark-text me-2"></i>Quản Lý Phiếu Nhập
+            </a>
         </li>
-        <li class="nav-item">
-            <a class="nav-link" href="/taikhoan.html">Quản Lý Tài Khoản</a>
-        </li>
-        <li class="nav-item">
-            <a href="/logout" class="btn btn-danger">Đăng Xuất</a>
+        <li class="nav-item mb-2">
+            <a class="nav-link" href="/taikhoan.html">
+                <i class="bi bi-person-badge me-2"></i>Quản Lý Tài Khoản
+            </a>
         </li>
     </ul>
     <hr>
-    <h5>Tìm Kiếm Trạm Xăng</h5>
+    <h5 class="mb-3">Tìm Kiếm Trạm Xăng</h5>
     <div id="search-bar">
-        <input type="text" id="searchInput" class="form-control" placeholder="Nhập tên trạm hoặc địa chỉ...">
-        <button class="btn btn-primary mt-2" onclick="searchStation()">Tìm Kiếm</button>
+        <input type="text" id="searchInput" class="form-control mb-2" placeholder="Nhập tên trạm hoặc địa chỉ...">
+        <button class="btn btn-primary w-100" onclick="searchStation()">
+            <i class="bi bi-search me-2"></i>Tìm Kiếm
+        </button>
     </div>
 </div>
 
 <!-- Main Content -->
-<div id="map" class="container mt-4"></div>
+<div id="map"></div>
 
 <!-- Modal thêm/sửa trạm xăng -->
 <div class="modal fade" id="tramXangModal" tabindex="-1" aria-labelledby="tramXangModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form id="tramXangForm">
+            <form id="tramXangForm" th:action="@{/api/tramxang}" method="post" enctype="multipart/form-data">
                 <div class="modal-header">
                     <h5 class="modal-title" id="tramXangModalLabel">Thêm/Sửa Trạm Xăng</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <input type="hidden" id="maTram" name="maTram">
+                    <input type="hidden" id="maTram" name="maTram" th:value="${tramXang?.maTram}">
                     <div class="mb-3">
                         <label for="tenTram" class="form-label">Tên Trạm</label>
-                        <input type="text" class="form-control" id="tenTram" name="tenTram" required>
+                        <input type="text" class="form-control" id="tenTram" name="tenTram" th:value="${tramXang?.tenTram}" required>
                     </div>
                     <div class="mb-3">
                         <label for="diaChi" class="form-label">Địa Chỉ</label>
-                        <input type="text" class="form-control" id="diaChi" name="diaChi" required>
+                        <input type="text" class="form-control" id="diaChi" name="diaChi" th:value="${tramXang?.diaChi}" required>
                     </div>
                     <div class="mb-3">
                         <label for="truongTram" class="form-label">Tên Trưởng Trạm</label>
-                        <input type="text" class="form-control" id="truongTram" name="truongTram" required>
+                        <input type="text" class="form-control" id="truongTram" name="truongTram" th:value="${tramXang?.truongTram}" required>
                     </div>
                     <div class="mb-3">
                         <label for="kinhDo" class="form-label">Kinh Độ</label>
-                        <input type="text" class="form-control" id="kinhDo" name="kinhDo" readonly>
+                        <input type="text" class="form-control" id="kinhDo" name="kinhDo" th:value="${tramXang?.kinhDo}" readonly>
                     </div>
                     <div class="mb-3">
                         <label for="viDo" class="form-label">Vĩ Độ</label>
-                        <input type="text" class="form-control" id="viDo" name="viDo" readonly>
+                        <input type="text" class="form-control" id="viDo" name="viDo" th:value="${tramXang?.viDo}" readonly>
                     </div>
                     <div class="mb-3">
                         <label for="hinhAnh" class="form-label">Hình Ảnh</label>
@@ -144,7 +225,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
                     <button type="submit" class="btn btn-primary">Lưu</button>
-                    <button type="button" class="btn btn-danger" id="btnDelete">Xóa</button>
+                    <button type="button" class="btn btn-danger" id="btnDelete" th:if="${tramXang?.maTram}">Xóa</button>
                 </div>
             </form>
         </div>
@@ -158,7 +239,7 @@
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 
 <!-- Custom JS -->
-<script>
+<script th:inline="javascript">
     // Sidebar toggle functionality
     document.addEventListener('DOMContentLoaded', function () {
         const toggleSidebarButton = document.getElementById('toggleSidebar');
@@ -170,7 +251,7 @@
             if (sidebar.classList.contains('active')) {
                 map.style.marginLeft = '270px';
             } else {
-                map.style.marginLeft = '20px';
+                map.style.marginLeft = '0px';
             }
         });
     });
